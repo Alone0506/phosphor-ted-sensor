@@ -1,0 +1,23 @@
+[
+    {
+        "Desc": {
+            "Name": "TestSensor",
+            "SensorType": "temperature",
+            "MaxValue": 127.0,
+            "MinValue": -128.0
+        },
+        "Threshold": {
+            "CriticalHigh": 80,
+            "CriticalLow": 0,
+            "WarningHigh": 70,
+            "WarningLow": 5
+        },
+        "Associations": [
+            [
+                "chassis",
+                "all_sensors",
+                "/xyz/openbmc_project/inventory/system/board/Ted_Board"
+            ]
+        ]
+    }
+]

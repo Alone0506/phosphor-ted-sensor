@@ -1,0 +1,12 @@
+[Unit]
+Description=Ted sensors
+
+[Service]
+Restart=always
+ExecStart=@libexecdir@/phosphor-ted-sensor/ted-sensor
+Type=dbus
+BusName=xyz.openbmc_project.TedSensor
+SyslogIdentifier=phosphor-ted-sensor
+
+[Install]
+WantedBy=multi-user.target
