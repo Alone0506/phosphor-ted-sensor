@@ -14,9 +14,8 @@ project(
 executable(
     'phosphor-ted-sensor',
     [
-        'main.cpp',
-        'tedSensor.cpp',
-        'threshold.cpp',
+        'src/main.cpp',
+        'src/tedSensor.cpp',
     ],
     dependencies: [
         dependency('nlohmann_json', include_type: 'system'),
