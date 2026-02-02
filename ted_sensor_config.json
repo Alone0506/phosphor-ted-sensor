@@ -8,16 +8,23 @@
         },
         "Threshold": {
             "CriticalHigh": 80,
-            "CriticalLow": 0,
             "WarningHigh": 70,
-            "WarningLow": 5
+            "WarningLow": 5,
+            "CriticalLow": 0
+        }
+    },
+    {
+        "Desc": {
+            "Name": "TestSensor2",
+            "SensorType": "current",
+            "MaxValue": 127.0,
+            "MinValue": 0.0
         },
-        "Associations": [
-            [
-                "chassis",
-                "all_sensors",
-                "/xyz/openbmc_project/inventory/system/board/Ted_Board"
-            ]
-        ]
+        "Threshold": {
+            "CriticalHigh": 80,
+            "WarningHigh": 10,
+            "WarningLow": 5,
+            "CriticalLow": 0
+        }
     }
 ]

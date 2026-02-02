@@ -4,7 +4,7 @@
 
 #include <fstream>
 
-std::filesystem::path sensorDirPath = "/xyz/openbmc_project/sensors/";
+std::filesystem::path sensorDbusPath = "/xyz/openbmc_project/sensors/";
 
 std::filesystem::path simulationDirPath = "/tmp/ted-sensor/simulation";
 
@@ -100,7 +100,7 @@ void TedSensor::updateTedSensor()
     value = std::clamp(value, ValueIface::minValue(), ValueIface::maxValue());
     ValueIface::value(value);
 
-    std::filesystem::path sensorFilePath = sensorDirPath / name;
+    std::filesystem::path sensorFilePath = sensorDbusPath / name;
     if (std::filesystem::exists(sensorFilePath))
     {
         std::ofstream sensorFile(sensorFilePath);

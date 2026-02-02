@@ -15,7 +15,7 @@ namespace phosphor::ted_sensor
 {
 
 // see phosphor-logging/lib/include/phosphor-logging/lg2.hpp
-PHOSPHOR_LOG2_USING_WITH_FLAGS
+PHOSPHOR_LOG2_USING_WITH_FLAGS;
 
 using BasicVariantType =
     std::variant<std::string, int64_t, uint64_t, double, int32_t, uint32_t,
@@ -65,18 +65,13 @@ class TedSensor : public ValueObject
     /** @brief Set sensor value */
     void setSensorValue(double value);
 
-    /** @brief Map of list of parameters */
-    using ParaMap =
-        std::unordered_map<std::string, std::unique_ptr<SensorParam>>;
-    ParaMap paraMap;
-
   private:
     /** @brief sdbusplus bus client connection */
     sdbusplus::bus_t& bus;
     /** @brief name of sensor */
     std::string name;
     /** @brief unit of sensor */
-    ValueIface::Unit unit;
+    ValueIface::Unit units;
     /** @brief object path of this sensor */
     std::string objectPath;
 
@@ -114,7 +109,7 @@ class TedSensor : public ValueObject
         if ((!alarmHigh && value >= threshold->high()) ||
             (alarmHigh && value < threshold->high()))
         {
-            change = ture;
+            change = true;
             if (!alarmHigh)
             {
                 lg2::error(
@@ -139,7 +134,7 @@ class TedSensor : public ValueObject
         if ((!alarmLow && value <= threshold->low()) ||
             (alarmLow && value > (threshold->low())))
         {
-            chage = true;
+            change = true;
             if (!alarmLow)
             {
                 lg2::error("ASSERT: sensor {SENSOR} is below the low threshold "
@@ -178,6 +173,7 @@ class TedSensors
   private:
     /** @brief sdbusplus bus client connection. */
     sdbusplus::bus_t& bus;
+
     /** @brief Parsing ted sensor configuration */
     Json parseConfigFile();
 

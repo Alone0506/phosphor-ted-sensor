@@ -17,6 +17,8 @@ using Unit = sdbusplus::xyz::openbmc_project::Sensor::server::Value::Unit;
 using CriticalObject = ServerObject<threshold_ns::Critical>;
 using WarningObject = ServerObject<threshold_ns::Warning>;
 
+template <typename T>
+struct Threshold;
 template <>
 struct Threshold<WarningObject> : public WarningObject
 {

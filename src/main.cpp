@@ -1,4 +1,4 @@
-#include "sensor_manager.hpp"
+#include "tedSensor.hpp"
 
 #include <sdbusplus/server.hpp>
 

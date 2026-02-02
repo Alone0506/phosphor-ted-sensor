@@ -11,6 +11,8 @@ project(
     meson_version: '>=1.1.1',
 )
 
+pkgdatadir = get_option('datadir') / meson.project_name()
+
 executable(
     'phosphor-ted-sensor',
     [
@@ -28,11 +30,11 @@ executable(
     install_dir: get_option('bindir'),
 )
 
-install_data(sources: 'ted_sensor_config.json', install_dir: packagedir)
+install_data('ted_sensor_config.json', install_dir: pkgdatadir)
 
 systemd = dependency('systemd')
 conf_data = configuration_data()
-conf_data.set('libexecdir', get_option('prefix') / get_option('libexecdir'))
+conf_data.set('bindir', get_option('prefix') / get_option('bindir'))
 configure_file(
     input: 'phosphor-ted-sensor.service.in',
     output: 'phosphor-ted-sensor.service',
