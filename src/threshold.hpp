@@ -13,7 +13,6 @@ using ServerObject = typename sdbusplus::server::object_t<T...>;
 
 namespace threshold_ns =
     sdbusplus::xyz::openbmc_project::Sensor::Threshold::server;
-using Unit = sdbusplus::xyz::openbmc_project::Sensor::server::Value::Unit;
 using CriticalObject = ServerObject<threshold_ns::Critical>;
 using WarningObject = ServerObject<threshold_ns::Warning>;
 
@@ -27,16 +26,13 @@ struct Threshold<WarningObject> : public WarningObject
 
     sdbusplus::bus_t& bus;
     std::string objPath;
-    Unit units;
 
     /** @brief Constructor to put object onto bus at a dbus path.
      *  @param[in] bus - Bus to attaach to.
      *  @param[in] path - Path to attach at.
-     *  @param[in] units - units
      */
-    Threshold(sdbusplus::bus_t& bus, const char* path, Unit units) :
-        WarningObject(bus, path), bus(bus), objPath(std::string(path)),
-        units(units)
+    Threshold(sdbusplus::bus_t& bus, const char* path) :
+        WarningObject(bus, path), bus(bus), objPath(std::string(path))
     {}
 
     auto high()
@@ -108,16 +104,13 @@ struct Threshold<CriticalObject> : public CriticalObject
 
     sdbusplus::bus_t& bus;
     std::string objPath;
-    Unit units;
 
     /** @brief Constructor to put object onto bus at a dbus path.
      *  @param[in] bus - Bus to attaach to.
      *  @param[in] path - Path to attach at.
-     *  @param[in] units - units
      */
-    Threshold(sdbusplus::bus_t& bus, const char* path, Unit units) :
-        CriticalObject(bus, path), bus(bus), objPath(std::string(path)),
-        units(units)
+    Threshold(sdbusplus::bus_t& bus, const char* path) :
+        CriticalObject(bus, path), bus(bus), objPath(std::string(path))
     {}
 
     auto high()

@@ -70,10 +70,6 @@ class TedSensor : public ValueObject
     sdbusplus::bus_t& bus;
     /** @brief name of sensor */
     std::string name;
-    /** @brief unit of sensor */
-    ValueIface::Unit units;
-    /** @brief object path of this sensor */
-    std::string objectPath;
 
     /** @brief critical threshold interface object */
     std::unique_ptr<Threshold<CriticalObject>> criticalIface;
@@ -83,15 +79,16 @@ class TedSensor : public ValueObject
     /** @brief association interface object */
     std::unique_ptr<AssociationObject> associationIface;
 
-    /** @brief read config from json object and initialize sensor data for each
-     * ted sensor
-     */
+    /** @brief read config from json object and initialize sensor data */
     void initTedSensor(const Json& sensorConfig, const std::string& objPath,
                        const std::string& sensorType);
 
     /** @brief create threshold objects from json config */
     void createThresholds(const Json& threshold, const std::string& objPath,
                           ValueIface::Unit units);
+
+    /** @brief Update sensor at regular interval */
+    void updateTedSensor();
 
     /** @brief Check Sensor threshold and update alarm and log. Returns
      * true if the threshold range has no alarms set. change will be

@@ -4,9 +4,10 @@
 
 #include <fstream>
 
-std::filesystem::path sensorDbusPath = "/xyz/openbmc_project/sensors/";
+static constexpr std::string sensorDbusPath = "/xyz/openbmc_project/sensors/";
 
-std::filesystem::path simulationDirPath = "/tmp/ted-sensor/simulation";
+std::filesystem::path sensorDirPath = "/tmp/ted_sensor/sensors";
+std::filesystem::path simulationDirPath = "/tmp/ted_sensor/simulation";
 
 PHOSPHOR_LOG2_USING_WITH_FLAGS;
 
@@ -25,8 +26,8 @@ std::map<std::string, ValueIface::Unit> unitMap = {
     {"airflow", ValueIface::Unit::CFM},
     {"pressure", ValueIface::Unit::Pascals}};
 
-void TedSensor::createThresholds(
-    const Json& threshold, const std::string& objPath, ValueIface::Unit units)
+void TedSensor::createThresholds(const Json& threshold,
+                                 const std::string& objPath)
 {
     if (threshold.empty())
     {
@@ -35,24 +36,36 @@ void TedSensor::createThresholds(
 
     if (threshold.contains("CriticalHigh") || threshold.contains("CriticalLow"))
     {
-        criticalIface = std::make_unique<Threshold<CriticalObject>>(
-            bus, objPath.c_str(), units);
+        criticalIface =
+            std::make_unique<Threshold<CriticalObject>>(bus, objPath.c_str());
 
-        criticalIface->criticalHigh(threshold.value(
-            "CriticalHigh", std::numeric_limits<double>::quiet_NaN()));
-        criticalIface->criticalLow(threshold.value(
-            "CriticalLow", std::numeric_limits<double>::quiet_NaN()));
+        if (threshold.contains("CriticalHigh"))
+        {
+            criticalIface->criticalHigh(threshold.value(
+                "CriticalHigh", std::numeric_limits<double>::quiet_NaN()));
+        }
+        if (threshold.contains("CriticalLow"))
+        {
+            criticalIface->criticalLow(threshold.value(
+                "CriticalLow", std::numeric_limits<double>::quiet_NaN()));
+        }
     }
 
     if (threshold.contains("WarningHigh") || threshold.contains("WarningLow"))
     {
-        warningIface = std::make_unique<Threshold<WarningObject>>(
-            bus, objPath.c_str(), units);
+        warningIface =
+            std::make_unique<Threshold<WarningObject>>(bus, objPath.c_str());
 
-        warningIface->warningHigh(threshold.value(
-            "WarningHigh", std::numeric_limits<double>::quiet_NaN()));
-        warningIface->warningLow(threshold.value(
-            "WarningLow", std::numeric_limits<double>::quiet_NaN()));
+        if (threshold.contains("WarningHigh"))
+        {
+            warningIface->warningHigh(threshold.value(
+                "WarningHigh", std::numeric_limits<double>::quiet_NaN()));
+        }
+        if (threshold.contains("WarningLow"))
+        {
+            warningIface->warningLow(threshold.value(
+                "WarningLow", std::numeric_limits<double>::quiet_NaN()));
+        }
     }
 }
 
@@ -92,15 +105,11 @@ void TedSensor::updateTedSensor()
                        simulationFilePath.string());
         }
     }
-    else
-    {
-        value = 55.3;
-    }
 
     value = std::clamp(value, ValueIface::minValue(), ValueIface::maxValue());
     ValueIface::value(value);
 
-    std::filesystem::path sensorFilePath = sensorDbusPath / name;
+    std::filesystem::path sensorFilePath = sensorDirPath / name;
     if (std::filesystem::exists(sensorFilePath))
     {
         std::ofstream sensorFile(sensorFilePath);
@@ -123,30 +132,32 @@ void TedSensor::initTedSensor(const Json& sensorConfig,
 {
     static const Json empty{};
 
-    units = unitMap.at(sensorType);
+    /* Setting unit value */
+    ValueIface::unit(unitMap[sensorType]);
 
-    /* get threshold values if defined in config */
-    auto thresholds = sensorConfig.value("Thresholds", empty);
-    createThresholds(thresholds, objPath, units);
+    /* get threshold values if defined in Threshold */
+    auto thresholdConf = sensorConfig.value("Threshold", empty);
+    createThresholds(thresholdConf, objPath);
 
-    /* get MaxValue, MinValue setting if defined in config */
-    auto confDesc = sensorConfig.value("Desc", empty);
-    if (auto maxConf = confDesc.find("MaxValue");
-        maxConf != confDesc.end() && maxConf->is_number())
+    /* get MaxValue, MinValue setting if defined in Desc */
+    auto descConf = sensorConfig.value("Desc", empty);
+    auto maxConf = descConf.find("MaxValue");
+    if (maxConf != descConf.end() && maxConf->is_number())
     {
         ValueIface::maxValue(maxConf->get<double>());
     }
-    if (auto minConf = confDesc.find("MinValue");
-        minConf != confDesc.end() && minConf->is_number())
+
+    auto minConf = descConf.find("MinValue");
+    if (minConf != descConf.end() && minConf->is_number())
     {
         ValueIface::minValue(minConf->get<double>());
     }
 
-    /* get association */
-    auto assocJson = sensorConfig.value("Associations", empty);
-    if (!assocJson.empty())
+    /* get associations if defined in Associations */
+    auto assocConf = sensorConfig.value("Associations", empty);
+    if (!assocConf.empty())
     {
-        auto assocs = getAssociationsFromJson(assocJson);
+        AssociationList assocs = getAssociationsFromJson(assocConf);
         if (!assocs.empty())
         {
             associationIface =
@@ -234,12 +245,20 @@ void TedSensors::createTedSensors()
                         bus, objPath.c_str(), j, name, sensorType);
 
                     lg2::info("Added a new ted sensor: {NAME}", "NAME", name);
-                    // TODO: 每一秒polling一次
-                    tedSensorPtr->updateTedSensor();
 
-                    /* Initialize unit value */
-                    tedSensorPtr->ValueIface::unit(unitMap[sensorType]);
+                    // During construction, because action::defer_emit is used,
+                    // the "added" signal is not sent immediately. The D-Bus
+                    // object remains in an "not yet emitted" state internally.
+                    // Therefore, emit_object_added() must be called manually to
+                    // emit the D-Bus object and trigger the object-added signal
+                    // at once.
+                    //
+                    // During destruction, the sd_bus_emit_object_removed(path)
+                    // signal will be sent to D-Bus.
                     tedSensorPtr->emit_object_added();
+
+                    // TODO: 每一秒polling一次, 用nvme的event timer
+                    tedSensorPtr->updateTedSensor();
 
                     tedSensorsMap.emplace(name, std::move(tedSensorPtr));
                 }

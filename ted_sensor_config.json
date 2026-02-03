@@ -11,7 +11,14 @@
             "WarningHigh": 70,
             "WarningLow": 5,
             "CriticalLow": 0
-        }
+        },
+        "Associations": [
+            [
+                "chassis",
+                "all_sensors",
+                "/xyz/openbmc_project/inventory/system/board/Ted_Board"
+            ]
+        ]
     },
     {
         "Desc": {
@@ -25,6 +32,13 @@
             "WarningHigh": 10,
             "WarningLow": 5,
             "CriticalLow": 0
-        }
+        },
+        "Associations": [
+            [
+                "chassis",
+                "all_sensors",
+                "/xyz/openbmc_project/inventory/system/board/Ted_Board"
+            ]
+        ]
     }
 ]
