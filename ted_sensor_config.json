@@ -23,7 +23,7 @@
     {
         "Desc": {
             "Name": "TestSensor2",
-            "SensorType": "current",
+            "SensorType": "temperature",
             "MaxValue": 127.0,
             "MinValue": 0.0
         },

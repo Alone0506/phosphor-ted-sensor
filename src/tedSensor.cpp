@@ -4,7 +4,7 @@
 
 #include <fstream>
 
-static constexpr std::string sensorDbusPath = "/xyz/openbmc_project/sensors/";
+static constexpr auto sensorDbusPath = "/xyz/openbmc_project/sensors/";
 
 std::filesystem::path sensorDirPath = "/tmp/ted_sensor/sensors";
 std::filesystem::path simulationDirPath = "/tmp/ted_sensor/simulation";
@@ -89,7 +89,6 @@ AssociationList getAssociationsFromJson(const Json& j)
 void TedSensor::updateTedSensor()
 {
     double value = std::numeric_limits<double>::quiet_NaN();
-
     std::filesystem::path simulationFilePath = simulationDirPath / name;
     if (std::filesystem::exists(simulationFilePath))
     {
@@ -105,10 +104,11 @@ void TedSensor::updateTedSensor()
                        simulationFilePath.string());
         }
     }
-
     value = std::clamp(value, ValueIface::minValue(), ValueIface::maxValue());
+    lg2::debug("value {VALUE}", "VALUE", value);
     ValueIface::value(value);
 
+    // record the sensor value to a file
     std::filesystem::path sensorFilePath = sensorDirPath / name;
     if (std::filesystem::exists(sensorFilePath))
     {

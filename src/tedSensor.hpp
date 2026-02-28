@@ -33,7 +33,7 @@ using Json = nlohmann::json;
 template <typename... T>
 using ServerObject = typename sdbusplus::server::object_t<T...>;
 
-using ValueIface = sdbusplus::xyz::openbmc_project::Sensor::server::Value;
+using ValueIface = sdbusplus::server::xyz::openbmc_project::sensor::Value;
 using ValueObject = ServerObject<ValueIface>;
 
 using AssociationIface =
@@ -65,6 +65,9 @@ class TedSensor : public ValueObject
     /** @brief Set sensor value */
     void setSensorValue(double value);
 
+    /** @brief Update sensor at regular interval */
+    void updateTedSensor();
+
   private:
     /** @brief sdbusplus bus client connection */
     sdbusplus::bus_t& bus;
@@ -84,11 +87,7 @@ class TedSensor : public ValueObject
                        const std::string& sensorType);
 
     /** @brief create threshold objects from json config */
-    void createThresholds(const Json& threshold, const std::string& objPath,
-                          ValueIface::Unit units);
-
-    /** @brief Update sensor at regular interval */
-    void updateTedSensor();
+    void createThresholds(const Json& threshold, const std::string& objPath);
 
     /** @brief Check Sensor threshold and update alarm and log. Returns
      * true if the threshold range has no alarms set. change will be
@@ -162,7 +161,7 @@ class TedSensors
      *
      * @param[in] bus     - Handle to system dbus
      */
-    explicit TedSensors(sdbusplus::but_t& bus) : bus(bus)
+    explicit TedSensors(sdbusplus::bus_t& bus) : bus(bus)
     {
         createTedSensors();
     }

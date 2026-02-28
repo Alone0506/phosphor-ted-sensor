@@ -3,7 +3,7 @@ Description=Ted sensors
 
 [Service]
 Restart=always
-ExecStart=@libexecdir@/phosphor-ted-sensor/ted-sensor
+ExecStart=@bindir@/phosphor-ted-sensor
 Type=dbus
 BusName=xyz.openbmc_project.TedSensor
 SyslogIdentifier=phosphor-ted-sensor
