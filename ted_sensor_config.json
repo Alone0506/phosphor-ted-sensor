@@ -1,16 +1,16 @@
 [
     {
         "Desc": {
-            "Name": "TedVirtualTemp",
+            "Name": "TestSensor",
             "SensorType": "temperature",
             "MaxValue": 127.0,
             "MinValue": -128.0
         },
         "Threshold": {
-            "CriticalHigh": 90,
-            "CriticalLow": 20,
+            "CriticalHigh": 80,
             "WarningHigh": 70,
-            "WarningLow": 30
+            "WarningLow": 5,
+            "CriticalLow": 0
         },
         "Associations": [
             [
@@ -18,39 +18,20 @@
                 "all_sensors",
                 "/xyz/openbmc_project/inventory/system/board/Ted_Board"
             ]
-        ],
-        "Params": {
-            "DbusParam": [
-                {
-                    "ParamName": "P1",
-                    "Desc": {
-                        "Name": "TedTemp",
-                        "SensorType": "temperature"
-                    }
-                },
-                {
-                    "ParamName": "P2",
-                    "Desc": {
-                        "Name": "TedTemp2",
-                        "SensorType": "temperature"
-                    }
-                }
-            ]
-        },
-        "Expression": "P1 + P2"
+        ]
     },
     {
         "Desc": {
-            "Name": "TedVirtualTemp2",
+            "Name": "TestSensor2",
             "SensorType": "temperature",
             "MaxValue": 127.0,
-            "MinValue": -128.0
+            "MinValue": 0.0
         },
         "Threshold": {
-            "CriticalHigh": 90,
-            "CriticalLow": 20,
-            "WarningHigh": 70,
-            "WarningLow": 30
+            "CriticalHigh": 80,
+            "WarningHigh": 10,
+            "WarningLow": 5,
+            "CriticalLow": 0
         },
         "Associations": [
             [
@@ -58,25 +39,6 @@
                 "all_sensors",
                 "/xyz/openbmc_project/inventory/system/board/Ted_Board"
             ]
-        ],
-        "Params": {
-            "DbusParam": [
-                {
-                    "ParamName": "P1",
-                    "Desc": {
-                        "Name": "TestSensor",
-                        "SensorType": "temperature"
-                    }
-                },
-                {
-                    "ParamName": "P2",
-                    "Desc": {
-                        "Name": "TestSensor2",
-                        "SensorType": "temperature"
-                    }
-                }
-            ]
-        },
-        "Expression": "P1 + P2"
+        ]
     }
 ]
