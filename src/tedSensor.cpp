@@ -6,6 +6,7 @@
 
 std::filesystem::path simulationDirPath = "/tmp/sensor/simulation";
 
+// see phosphor-logging/lib/include/phosphor-logging/lg2.hpp
 PHOSPHOR_LOG2_USING_WITH_FLAGS;
 
 namespace phosphor::ted_sensor

@@ -16,10 +16,6 @@
 
 namespace phosphor::ted_sensor
 {
-
-// see phosphor-logging/lib/include/phosphor-logging/lg2.hpp
-PHOSPHOR_LOG2_USING_WITH_FLAGS;
-
 using Json = nlohmann::json;
 
 using ValueIface = sdbusplus::server::xyz::openbmc_project::sensor::Value;
