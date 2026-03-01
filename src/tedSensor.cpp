@@ -39,7 +39,13 @@ void TedSensor::initTedSensor(const Json& sensorConfig,
     auto thresholdConf = sensorConfig.value("Threshold", empty);
     double w = thresholdConf.value("WarningHigh",
                                    std::numeric_limits<double>::quiet_NaN());
-    lg2::info("WarningHigh: {W}", "W", w);
+    double q = thresholdConf.value("WarningLow",
+                                   std::numeric_limits<double>::quiet_NaN());
+    double r = thresholdConf.value("CriticalHigh",
+                                   std::numeric_limits<double>::quiet_NaN());
+    double s = thresholdConf.value("CriticalLow",
+                                   std::numeric_limits<double>::quiet_NaN());
+    lg2::info("WarningHigh: {W}, WarningLow: {Q}, CriticalHigh: {R}, CriticalLow: {S}", "W", w, "Q", q, "R", r, "S", s);
     WarningIface::warningHigh(thresholdConf.value(
         "WarningHigh", std::numeric_limits<double>::quiet_NaN()));
     WarningIface::warningLow(thresholdConf.value(
@@ -99,12 +105,6 @@ void TedSensor::read()
     value = std::clamp(value, ValueIface::minValue(), ValueIface::maxValue());
     ValueIface::value(value);
 }
-// systemctl status phosphor-ted-sensor.service
-// busctl tree xyz.openbmc_project.TedSensor
-// busctl introspect xyz.openbmc_project.TedSensor
-// /xyz/openbmc_project/sensors/temperature/TestSensor
-// mkdir -p /tmp/sensor/simulation
-// echo 75 > /tmp/sensor/simulation/TestSensor
 
 void TedSensor::checkThreshold()
 {

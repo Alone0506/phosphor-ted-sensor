@@ -147,11 +147,23 @@ void TedSensors::run()
         lg2::error("Error in polling loop. {ERROR}", "ERROR", e.what());
     }
 }
-
+// systemctl status phosphor-ted-sensor.service
+// busctl tree xyz.openbmc_project.TedSensor
+// busctl introspect xyz.openbmc_project.TedSensor
+// /xyz/openbmc_project/sensors/temperature/TestSensor
+// mkdir -p /tmp/sensor/simulation
+// echo 75 > /tmp/sensor/simulation/TestSensor
 void TedSensors::read()
 {
+    static int c = 0;
+    c++;
+
     for (auto& [name, sensor] : tedSensorsMap)
     {
+        if (c == 40)
+        {
+            sensor->WarningIface::warningHigh(66);
+        }
         sensor->read();
         sensor->checkThreshold();
     }
