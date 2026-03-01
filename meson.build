@@ -18,6 +18,7 @@ executable(
     [
         'src/main.cpp',
         'src/tedSensor.cpp',
+        'src/tedSensors.cpp',
     ],
     dependencies: [
         dependency('nlohmann_json', include_type: 'system'),
