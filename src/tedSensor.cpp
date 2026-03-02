@@ -37,15 +37,6 @@ void TedSensor::initTedSensor(const Json& sensorConfig,
 
     /* get threshold values if defined in Threshold */
     auto thresholdConf = sensorConfig.value("Threshold", empty);
-    double w = thresholdConf.value("WarningHigh",
-                                   std::numeric_limits<double>::quiet_NaN());
-    double q = thresholdConf.value("WarningLow",
-                                   std::numeric_limits<double>::quiet_NaN());
-    double r = thresholdConf.value("CriticalHigh",
-                                   std::numeric_limits<double>::quiet_NaN());
-    double s = thresholdConf.value("CriticalLow",
-                                   std::numeric_limits<double>::quiet_NaN());
-    lg2::info("WarningHigh: {W}, WarningLow: {Q}, CriticalHigh: {R}, CriticalLow: {S}", "W", w, "Q", q, "R", r, "S", s);
     WarningIface::warningHigh(thresholdConf.value(
         "WarningHigh", std::numeric_limits<double>::quiet_NaN()));
     WarningIface::warningLow(thresholdConf.value(
@@ -62,7 +53,6 @@ void TedSensor::initTedSensor(const Json& sensorConfig,
     {
         ValueIface::maxValue(maxConf->get<double>());
     }
-
     auto minConf = descConf.find("MinValue");
     if (minConf != descConf.end() && minConf->is_number())
     {
@@ -80,7 +70,7 @@ void TedSensor::initTedSensor(const Json& sensorConfig,
         }
     }
 
-    /* Setting available */
+    /* setting available */
     AvailabilityInterface::available(true);
 }
 
