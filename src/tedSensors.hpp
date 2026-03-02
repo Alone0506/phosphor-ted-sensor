@@ -20,7 +20,7 @@ class TedSensors
     /**
      * @brief Constructs TedSensors
      *
-     * @param[in] bus     - Handle to system dbus
+     * @param[in] bus - Handle to system dbus
      */
     explicit TedSensors(sdbusplus::bus_t& bus) :
         bus(bus), _event(sdeventplus::Event::get_default()),
