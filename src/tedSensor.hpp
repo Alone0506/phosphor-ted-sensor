@@ -11,7 +11,6 @@
 #include <xyz/openbmc_project/Sensor/Value/server.hpp>
 #include <xyz/openbmc_project/State/Decorator/Availability/server.hpp>
 
-#include <map>
 #include <string>
 
 namespace phosphor::ted_sensor
