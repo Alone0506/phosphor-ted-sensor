@@ -28,8 +28,8 @@
         "Threshold": {
             "CriticalHigh": 80,
             "WarningHigh": 60,
-            "WarningLow": 5,
-            "CriticalLow": 0
+            "WarningLow": 10,
+            "CriticalLow": 5
         },
         "Associations": [
             [
