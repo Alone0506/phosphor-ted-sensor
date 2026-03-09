@@ -92,7 +92,23 @@ void TedSensor::read()
                        simulationFilePath.string());
         }
     }
-    value = std::clamp(value, ValueIface::minValue(), ValueIface::maxValue());
+    if (!std::isnan(value))
+    {
+        value =
+            std::clamp(value, ValueIface::minValue(), ValueIface::maxValue());
+    }
+
+    // In phosphor-dbus-interfaces Sensor/Value/server.cpp#L47 (Value::value),
+    // when both _value and value are NaN, because NaN != NaN evaluates to true,
+    // value_interface.property_changed("Value") will be triggered and a
+    // property-changed signal will be emitted. However, the actual value has
+    // not changed, which results in an unnecessary signal being sent.
+    double _value = ValueIface::value();
+    if ((std::isnan(_value) && std::isnan(value)) || _value == value)
+    {
+        return;
+    }
+
     ValueIface::value(value);
 }
 
