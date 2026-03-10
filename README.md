@@ -127,3 +127,36 @@ mkdir -p /tmp/sensor/simulation
 echo 75 > /tmp/sensor/simulation/TestSensor
 dbus-monitor --system "type='signal',sender='xyz.openbmc_project.TedSensor'"
 ```
+
+dbus-monitor message (set TestSensor value to 75, which is >= WarningHigh
+threshold):
+
+```bash
+root@evb-ast2600:~# dbus-monitor --system "type='signal',sender='xyz.openbmc_project.TedSensor'"
+signal time=1743712513.484692 sender=org.freedesktop.DBus -> destination=:1.69 serial=4294967295 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=NameAcquired
+   string ":1.69"
+signal time=1743712513.486389 sender=org.freedesktop.DBus -> destination=:1.69 serial=4294967295 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=NameLost
+   string ":1.69"
+signal time=1773105290.385868 sender=:1.10 -> destination=(null destination) serial=50 path=/xyz/openbmc_project/sensors/temperature/TestSensor; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged
+   string "xyz.openbmc_project.Sensor.Value"
+   array [
+      dict entry(
+         string "Value"
+         variant             double 75
+      )
+   ]
+   array [
+   ]
+signal time=1773105290.386729 sender=:1.10 -> destination=(null destination) serial=51 path=/xyz/openbmc_project/sensors/temperature/TestSensor; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged
+   string "xyz.openbmc_project.Sensor.Threshold.Warning"
+   array [
+      dict entry(
+         string "WarningAlarmHigh"
+         variant             boolean true
+      )
+   ]
+   array [
+   ]
+signal time=1773105290.387094 sender=:1.10 -> destination=(null destination) serial=52 path=/xyz/openbmc_project/sensors/temperature/TestSensor; interface=xyz.openbmc_project.Sensor.Threshold.Warning; member=WarningHighAlarmAsserted
+   double 75
+```
