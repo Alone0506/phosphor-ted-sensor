@@ -126,6 +126,9 @@ busctl introspect xyz.openbmc_project.TedSensor /xyz/openbmc_project/sensors/tem
 mkdir -p /tmp/sensor/simulation
 echo 75 > /tmp/sensor/simulation/TestSensor
 dbus-monitor --system "type='signal',sender='xyz.openbmc_project.TedSensor'"
+
+每秒看value:
+watch -n1 "busctl get-property xyz.openbmc_project.TedSensor /xyz/openbmc_project/sensors/temperature/TestSensor xyz.openbmc_project.Sensor.Value Value"
 ```
 
 dbus-monitor message (set TestSensor value to 75, which is >= WarningHigh
@@ -159,4 +162,12 @@ signal time=1773105290.386729 sender=:1.10 -> destination=(null destination) ser
    ]
 signal time=1773105290.387094 sender=:1.10 -> destination=(null destination) serial=52 path=/xyz/openbmc_project/sensors/temperature/TestSensor; interface=xyz.openbmc_project.Sensor.Threshold.Warning; member=WarningHighAlarmAsserted
    double 75
+```
+
+watch message:
+
+```bash
+Every 1.0s: busctl get-property xyz.openbmc_project.TedSensor /xyz/openbmc_project/sensors/temperature/TestSensor xyz.openbmc_project.Sensor.Value Value             2026-03-10 01:58:04
+
+d 75
 ```
