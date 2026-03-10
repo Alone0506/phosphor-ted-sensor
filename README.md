@@ -116,3 +116,14 @@ busctl introspect xyz.openbmc_project.TedSensor \
 mkdir -p /tmp/sensor/simulation
 echo 75 > /tmp/sensor/simulation/TestSensor
 ```
+
+## Note:
+
+```bash
+systemctl status phosphor-ted-sensor.service
+busctl tree xyz.openbmc_project.TedSensor
+busctl introspect xyz.openbmc_project.TedSensor /xyz/openbmc_project/sensors/temperature/TestSensor
+mkdir -p /tmp/sensor/simulation
+echo 75 > /tmp/sensor/simulation/TestSensor
+dbus-monitor --system "type='signal',sender='xyz.openbmc_project.TedSensor'"
+```
