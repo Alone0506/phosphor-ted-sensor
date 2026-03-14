@@ -1,7 +1,7 @@
 [
     {
         "Desc": {
-            "Name": "TestSensor",
+            "Name": "TedSensor1",
             "SensorType": "temperature",
             "MaxValue": 127.0,
             "MinValue": -128.0
@@ -20,7 +20,7 @@
     },
     {
         "Desc": {
-            "Name": "TestSensor2",
+            "Name": "TedSensor2",
             "SensorType": "temperature",
             "MaxValue": 127.0,
             "MinValue": -128.0
