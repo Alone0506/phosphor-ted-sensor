@@ -9,14 +9,7 @@
         "Threshold": {
             "CriticalHigh": 80,
             "WarningHigh": 60
-        },
-        "Associations": [
-            [
-                "chassis",
-                "all_sensors",
-                "/xyz/openbmc_project/inventory/system/board/Ted_Board"
-            ]
-        ]
+        }
     },
     {
         "Desc": {
