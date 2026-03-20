@@ -38,7 +38,7 @@ The config file is a JSON array. Each element defines one sensor:
 [
   {
     "Desc": {
-      "Name": "TestSensor",
+      "Name": "TedSensor1",
       "SensorType": "temperature",
       "MaxValue": 127.0,
       "MinValue": -128.0
@@ -110,11 +110,11 @@ busctl tree xyz.openbmc_project.TedSensor
 
 # Inspect a sensor
 busctl introspect xyz.openbmc_project.TedSensor \
-    /xyz/openbmc_project/sensors/temperature/TestSensor
+    /xyz/openbmc_project/sensors/temperature/TedSensor1
 
 # Write a simulated value
 mkdir -p /tmp/sensor/simulation
-echo 75 > /tmp/sensor/simulation/TestSensor
+echo 75 > /tmp/sensor/simulation/TedSensor1
 ```
 
 ## Note:
@@ -122,16 +122,16 @@ echo 75 > /tmp/sensor/simulation/TestSensor
 ```bash
 systemctl status phosphor-ted-sensor.service
 busctl tree xyz.openbmc_project.TedSensor
-busctl introspect xyz.openbmc_project.TedSensor /xyz/openbmc_project/sensors/temperature/TestSensor
+busctl introspect xyz.openbmc_project.TedSensor /xyz/openbmc_project/sensors/temperature/TedSensor1
 mkdir -p /tmp/sensor/simulation
-echo 75 > /tmp/sensor/simulation/TestSensor
+echo 75 > /tmp/sensor/simulation/TedSensor1
 dbus-monitor --system "type='signal',sender='xyz.openbmc_project.TedSensor'"
 
 每秒看value:
-watch -n1 "busctl get-property xyz.openbmc_project.TedSensor /xyz/openbmc_project/sensors/temperature/TestSensor xyz.openbmc_project.Sensor.Value Value"
+watch -n1 "busctl get-property xyz.openbmc_project.TedSensor /xyz/openbmc_project/sensors/temperature/TedSensor1 xyz.openbmc_project.Sensor.Value Value"
 ```
 
-dbus-monitor message (set TestSensor value to 75, which is >= WarningHigh
+dbus-monitor message (set TedSensor1 value to 75, which is >= WarningHigh
 threshold):
 
 ```bash
@@ -140,7 +140,7 @@ signal time=1743712513.484692 sender=org.freedesktop.DBus -> destination=:1.69 s
    string ":1.69"
 signal time=1743712513.486389 sender=org.freedesktop.DBus -> destination=:1.69 serial=4294967295 path=/org/freedesktop/DBus; interface=org.freedesktop.DBus; member=NameLost
    string ":1.69"
-signal time=1773105290.385868 sender=:1.10 -> destination=(null destination) serial=50 path=/xyz/openbmc_project/sensors/temperature/TestSensor; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged
+signal time=1773105290.385868 sender=:1.10 -> destination=(null destination) serial=50 path=/xyz/openbmc_project/sensors/temperature/TedSensor1; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged
    string "xyz.openbmc_project.Sensor.Value"
    array [
       dict entry(
@@ -150,7 +150,7 @@ signal time=1773105290.385868 sender=:1.10 -> destination=(null destination) ser
    ]
    array [
    ]
-signal time=1773105290.386729 sender=:1.10 -> destination=(null destination) serial=51 path=/xyz/openbmc_project/sensors/temperature/TestSensor; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged
+signal time=1773105290.386729 sender=:1.10 -> destination=(null destination) serial=51 path=/xyz/openbmc_project/sensors/temperature/TedSensor1; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged
    string "xyz.openbmc_project.Sensor.Threshold.Warning"
    array [
       dict entry(
@@ -160,14 +160,14 @@ signal time=1773105290.386729 sender=:1.10 -> destination=(null destination) ser
    ]
    array [
    ]
-signal time=1773105290.387094 sender=:1.10 -> destination=(null destination) serial=52 path=/xyz/openbmc_project/sensors/temperature/TestSensor; interface=xyz.openbmc_project.Sensor.Threshold.Warning; member=WarningHighAlarmAsserted
+signal time=1773105290.387094 sender=:1.10 -> destination=(null destination) serial=52 path=/xyz/openbmc_project/sensors/temperature/TedSensor1; interface=xyz.openbmc_project.Sensor.Threshold.Warning; member=WarningHighAlarmAsserted
    double 75
 ```
 
 watch message:
 
 ```bash
-Every 1.0s: busctl get-property xyz.openbmc_project.TedSensor /xyz/openbmc_project/sensors/temperature/TestSensor xyz.openbmc_project.Sensor.Value Value             2026-03-10 01:58:04
+Every 1.0s: busctl get-property xyz.openbmc_project.TedSensor /xyz/openbmc_project/sensors/temperature/TedSensor1 xyz.openbmc_project.Sensor.Value Value             2026-03-10 01:58:04
 
 d 75
 ```
