@@ -2,6 +2,7 @@
 
 #include "tedSensor.hpp"
 
+#include <sdbusplus/asio/object_server.hpp>
 #include <sdeventplus/event.hpp>
 #include <sdeventplus/utility/timer.hpp>
 
@@ -20,33 +21,28 @@ class TedSensors
     /**
      * @brief Constructs TedSensors
      *
-     * @param[in] bus - Handle to system dbus
+     * @param[in] conn - D-Bus object connection
      */
-    explicit TedSensors(sdbusplus::bus_t& bus) :
-        bus(bus), _event(sdeventplus::Event::get_default()),
-        _timer(_event, std::bind(&TedSensors::read, this))
-    {
-        createSensors();
-    }
-
-    void run();
+    explicit TedSensors(std::shared_ptr<sdbusplus::asio::connection>& conn);
 
   private:
-    /** @brief sdbusplus bus client connection. */
-    sdbusplus::bus_t& bus;
-
-    /** @brief the Event Loop structure */
-    sdeventplus::Event _event;
-    /** @brief Read Timer */
+    std::shared_ptr<sdbusplus::asio::connection>& conn;
+    sdbusplus::asio::object_server objServer;
     sdeventplus::utility::Timer<sdeventplus::ClockId::Monotonic> _timer;
 
-    /** @brief Parsing ted sensor configuration */
-    Json parseConfigFile();
+    std::shared_ptr<sdbusplus::asio::dbus_interface> addRemoveSensorIface;
 
     /** @brief Map of the object TedSensor */
     std::unordered_map<std::string, std::unique_ptr<TedSensor>> tedSensorsMap;
+    /** @brief JSON configuration, key: sensor name, value: sensor config */
+    std::unordered_map<std::string, Json> sensorConfigMap;
 
-    /** @brief Create list of virtual sensors from JSON config */
+    void registerAddRemoveMethod();
+
+    /** @brief Parsing ted sensor configuration */
+    Json parseConfigFile();
+    /** @brief Create list of sensors from JSON config */
+    void createSensor(const Json& sensorData);
     void createSensors();
 
     void read();

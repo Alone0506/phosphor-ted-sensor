@@ -2,9 +2,7 @@
 
 #include <nlohmann/json.hpp>
 #include <phosphor-logging/lg2.hpp>
-#include <sdbusplus/bus.hpp>
-#include <sdeventplus/event.hpp>
-#include <sdeventplus/utility/timer.hpp>
+#include <sdbusplus/asio/connection.hpp>
 #include <xyz/openbmc_project/Association/Definitions/server.hpp>
 #include <xyz/openbmc_project/Sensor/Threshold/Critical/server.hpp>
 #include <xyz/openbmc_project/Sensor/Threshold/Warning/server.hpp>
@@ -44,32 +42,26 @@ class TedSensor : public TedIface
 
     /** @brief Constructs TedSensor
      *
-     * @param[in] bus          - Handle to system dbus
+     * @param[in] conn         - Handle to system dbus
      * @param[in] objPath      - The Dbus path of sensor
      * @param[in] sensorConfig - Json object for sensor config
      * @param[in] name         - Sensor name
      * @param[in] sensorUnit   - sensor unit
      */
-    TedSensor(sdbusplus::bus_t& bus, const char* objPath,
-              const Json& sensorConfig, const std::string& name,
-              const ValueIface::Unit& sensorUnit) :
-        TedIface(bus, objPath, action::defer_emit), bus(bus), name(name)
+    TedSensor(std::shared_ptr<sdbusplus::asio::connection>& conn,
+              const char* objPath, const Json& sensorConfig,
+              const std::string& name, const ValueIface::Unit& sensorUnit) :
+        TedIface(*conn, objPath, action::defer_emit), name(name)
     {
         initTedSensor(sensorConfig, sensorUnit);
     }
 
-    /** @brief Update sensor at regular interval */
     void read();
-
     void checkThreshold();
 
   private:
-    /** @brief sdbusplus bus client connection */
-    sdbusplus::bus_t& bus;
-    /** @brief name of sensor */
     std::string name;
 
-    /** @brief read config from json object and initialize sensor data */
     void initTedSensor(const Json& sensorConfig,
                        const ValueIface::Unit& sensorUnit);
 };

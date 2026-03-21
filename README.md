@@ -115,6 +115,10 @@ busctl introspect xyz.openbmc_project.TedSensor \
 # Write a simulated value
 mkdir -p /tmp/sensor/simulation
 echo 75 > /tmp/sensor/simulation/TedSensor1
+
+# Remove & Add sensor (TedSensor2 as example)
+busctl call xyz.openbmc_project.TedSensor /xyz/openbmc_project/AddRemoveSensor xyz.openbmc_project.AddRemoveSensor RemoveSensor s "TedSensor2"
+busctl call xyz.openbmc_project.TedSensor /xyz/openbmc_project/AddRemoveSensor xyz.openbmc_project.AddRemoveSensor AddSensor s "TedSensor2"
 ```
 
 ## Note:
@@ -126,8 +130,11 @@ busctl introspect xyz.openbmc_project.TedSensor /xyz/openbmc_project/sensors/tem
 mkdir -p /tmp/sensor/simulation
 echo 75 > /tmp/sensor/simulation/TedSensor1
 dbus-monitor --system "type='signal',sender='xyz.openbmc_project.TedSensor'"
+```
 
 每秒看value:
+
+```bash
 watch -n1 "busctl get-property xyz.openbmc_project.TedSensor /xyz/openbmc_project/sensors/temperature/TedSensor1 xyz.openbmc_project.Sensor.Value Value"
 ```
 
@@ -170,4 +177,54 @@ watch message:
 Every 1.0s: busctl get-property xyz.openbmc_project.TedSensor /xyz/openbmc_project/sensors/temperature/TedSensor1 xyz.openbmc_project.Sensor.Value Value             2026-03-10 01:58:04
 
 d 75
+```
+
+call method
+
+- RemoveSensor:
+
+```bash
+root@evb-ast2600:~# busctl tree xyz.openbmc_project.TedSensor
+`- /xyz
+  `- /xyz/openbmc_project
+    |- /xyz/openbmc_project/AddRemoveSensor
+    `- /xyz/openbmc_project/sensors
+      `- /xyz/openbmc_project/sensors/temperature
+        |- /xyz/openbmc_project/sensors/temperature/TedSensor1
+        `- /xyz/openbmc_project/sensors/temperature/TedSensor2
+
+root@evb-ast2600:~# busctl call xyz.openbmc_project.TedSensor /xyz/openbmc_project/AddRemoveSensor xyz.openbmc_project.AddRemoveSensor RemoveSensor s "TedSensor2"
+s "Removed ted sensor: TedSensor2"
+
+root@evb-ast2600:~# busctl tree xyz.openbmc_project.TedSensor
+`- /xyz
+  `- /xyz/openbmc_project
+    |- /xyz/openbmc_project/AddRemoveSensor
+    `- /xyz/openbmc_project/sensors
+      `- /xyz/openbmc_project/sensors/temperature
+        `- /xyz/openbmc_project/sensors/temperature/TedSensor1
+```
+
+- AddSensor
+
+```bash
+root@evb-ast2600:~# busctl tree xyz.openbmc_project.TedSensor
+`- /xyz
+  `- /xyz/openbmc_project
+    |- /xyz/openbmc_project/AddRemoveSensor
+    `- /xyz/openbmc_project/sensors
+      `- /xyz/openbmc_project/sensors/temperature
+        `- /xyz/openbmc_project/sensors/temperature/TedSensor1
+
+root@evb-ast2600:~# busctl call xyz.openbmc_project.TedSensor /xyz/openbmc_project/AddRemoveSensor xyz.openbmc_project.AddRemoveSensor AddSensor s "TedSensor2"
+s "Added ted sensor: TedSensor2"
+
+root@evb-ast2600:~# busctl tree xyz.openbmc_project.TedSensor
+`- /xyz
+  `- /xyz/openbmc_project
+    |- /xyz/openbmc_project/AddRemoveSensor
+    `- /xyz/openbmc_project/sensors
+      `- /xyz/openbmc_project/sensors/temperature
+        |- /xyz/openbmc_project/sensors/temperature/TedSensor1
+        `- /xyz/openbmc_project/sensors/temperature/TedSensor2
 ```

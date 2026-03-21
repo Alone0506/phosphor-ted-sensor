@@ -3,6 +3,8 @@
 #include "tedSensor.hpp"
 
 #include <phosphor-logging/lg2.hpp>
+#include <sdbusplus/asio/connection.hpp>
+#include <sdbusplus/asio/object_server.hpp>
 #include <sdeventplus/event.hpp>
 #include <sdeventplus/utility/timer.hpp>
 
@@ -26,6 +28,25 @@ std::map<std::string, ValueIface::Unit> unitMap = {
     {"utilization", ValueIface::Unit::Percent},
     {"airflow", ValueIface::Unit::CFM},
     {"pressure", ValueIface::Unit::Pascals}};
+
+TedSensors::TedSensors(std::shared_ptr<sdbusplus::asio::connection>& conn) :
+    conn(conn),
+    objServer(sdbusplus::asio::object_server(conn, /*skipManager=*/true)),
+    _timer(sdeventplus::Event::get_default(),
+           std::bind(&TedSensors::read, this))
+{
+    objServer.add_manager("/xyz/openbmc_project/sensors");
+
+    addRemoveSensorIface =
+        objServer.add_interface("/xyz/openbmc_project/AddRemoveSensor",
+                                "xyz.openbmc_project.AddRemoveSensor");
+    registerAddRemoveMethod();
+    addRemoveSensorIface->initialize();
+
+    createSensors();
+
+    _timer.restart(std::chrono::microseconds(1000000));
+}
 
 Json TedSensors::parseConfigFile()
 {
@@ -65,87 +86,126 @@ Json TedSensors::parseConfigFile()
     return data;
 }
 
-void TedSensors::createSensors()
+void TedSensors::createSensor(const Json& sensorData)
 {
     static const Json empty{};
 
-    auto data = parseConfigFile();
-
-    // print values
-    lg2::debug("JSON: {JSON}", "JSON", data.dump());
-
-    /* get ted sensor config data */
-    for (const auto& j : data)
+    auto desc = sensorData.value("Desc", empty);
+    if (!desc.empty())
     {
-        auto desc = j.value("Desc", empty);
-        if (!desc.empty())
+        std::string name = desc.value("Name", "");
+        std::replace(name.begin(), name.end(), ' ', '_');
+        std::string sensorType = desc.value("SensorType", "");
+
+        if (!name.empty() && !sensorType.empty())
         {
-            std::string name = desc.value("Name", "");
-            std::replace(name.begin(), name.end(), ' ', '_');
-            std::string sensorType = desc.value("SensorType", "");
-
-            if (!name.empty() && !sensorType.empty())
+            if (unitMap.find(sensorType) == unitMap.end())
             {
-                if (unitMap.find(sensorType) == unitMap.end())
-                {
-                    lg2::error("Sensor type {TYPE} is not supported", "TYPE",
-                               sensorType);
-                }
-                else
-                {
-                    if (tedSensorsMap.find(name) != tedSensorsMap.end())
-                    {
-                        lg2::error("A ted sensor named {NAME} already exists",
-                                   "NAME", name);
-                        continue;
-                    }
-                    auto objPath = sensorDbusPath + sensorType + "/" + name;
-
-                    auto tedSensorPtr = std::make_unique<TedSensor>(
-                        bus, objPath.c_str(), j, name, unitMap[sensorType]);
-
-                    lg2::info("Added a new ted sensor: {NAME}", "NAME", name);
-
-                    // During construction, because action::defer_emit is used,
-                    // the "added" signal is not sent immediately. The D-Bus
-                    // object remains in an "not yet emitted" state internally.
-                    // Therefore, emit_object_added() must be called manually to
-                    // emit the D-Bus object and trigger the object-added signal
-                    // at once.
-                    //
-                    // During destruction, the sd_bus_emit_object_removed(path)
-                    // signal will be sent to D-Bus.
-                    tedSensorPtr->emit_object_added();
-
-                    tedSensorsMap.emplace(name, std::move(tedSensorPtr));
-                }
+                lg2::error("Sensor type {TYPE} is not supported", "TYPE",
+                           sensorType);
             }
             else
             {
-                lg2::error(
-                    "Sensor type ({TYPE}) or name ({NAME}) not found in config file",
-                    "TYPE", sensorType, "NAME", name);
+                if (tedSensorsMap.find(name) != tedSensorsMap.end())
+                {
+                    lg2::error("A ted sensor named {NAME} already exists",
+                               "NAME", name);
+                    return;
+                }
+                auto objPath = sensorDbusPath + sensorType + "/" + name;
+
+                auto tedSensorPtr = std::make_unique<TedSensor>(
+                    conn, objPath.c_str(), sensorData, name,
+                    unitMap[sensorType]);
+
+                lg2::info("Added a new ted sensor: {NAME}", "NAME", name);
+
+                // During construction, because action::defer_emit is used,
+                // the "added" signal is not sent immediately. The D-Bus
+                // object remains in an "not yet emitted" state internally.
+                // Therefore, emit_object_added() must be called manually to
+                // emit the D-Bus object and trigger the object-added signal
+                // at once.
+                //
+                // During destruction, the sd_bus_emit_object_removed(path)
+                // signal will be sent to D-Bus.
+                tedSensorPtr->emit_object_added();
+
+                tedSensorsMap.emplace(name, std::move(tedSensorPtr));
+                sensorConfigMap.emplace(name, sensorData);
             }
         }
         else
         {
             lg2::error(
-                "Descriptor for new ted sensor not found in config file");
+                "Sensor type ({TYPE}) or name ({NAME}) not found in config file",
+                "TYPE", sensorType, "NAME", name);
         }
+    }
+    else
+    {
+        lg2::error("Descriptor for new ted sensor not found in config file");
     }
 }
 
-void TedSensors::run()
+void TedSensors::createSensors()
 {
-    try
+    Json jsonConfigs = parseConfigFile();
+
+    lg2::debug("JSON: {JSON}", "JSON", jsonConfigs.dump());
+
+    for (const auto& j : jsonConfigs)
     {
-        uint64_t interval = 1000000; // 1 sec
-        _timer.restart(std::chrono::microseconds(interval));
+        createSensor(j);
     }
-    catch (const std::exception& e)
-    {
-        lg2::error("Error in polling loop. {ERROR}", "ERROR", e.what());
-    }
+}
+
+void TedSensors::registerAddRemoveMethod()
+{
+    addRemoveSensorIface->register_method(
+        "AddSensor", [this](std::string sensorName) {
+            std::replace(sensorName.begin(), sensorName.end(), ' ', '_');
+
+            if (sensorConfigMap.find(sensorName) == sensorConfigMap.end())
+            {
+                std::string s =
+                    "A sensor named (" + sensorName +
+                    ") does not exist in config file, cannot add sensor";
+                return s;
+            }
+
+            if (tedSensorsMap.find(sensorName) == tedSensorsMap.end())
+            {
+                createSensor(sensorConfigMap[sensorName]);
+                std::string s = "Added ted sensor: " + sensorName;
+                return s;
+            }
+            else
+            {
+                std::string s = "A sensor named (" + sensorName +
+                                ") already exists, cannot add sensor";
+                return s;
+            }
+        });
+
+    addRemoveSensorIface->register_method(
+        "RemoveSensor", [this](std::string sensorName) {
+            std::replace(sensorName.begin(), sensorName.end(), ' ', '_');
+
+            auto it = tedSensorsMap.find(sensorName);
+            if (it != tedSensorsMap.end())
+            {
+                tedSensorsMap.erase(it);
+                std::string s = "Removed ted sensor: " + sensorName;
+                return s;
+            }
+            else
+            {
+                std::string s = "A sensor named (" + sensorName +
+                                ") does not exist, cannot remove sensor";
+                return s;
+            }
+        });
 }
 
 void TedSensors::read()
