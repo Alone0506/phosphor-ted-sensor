@@ -2,9 +2,8 @@
 
 #include "tedSensor.hpp"
 
+#include <boost/asio/steady_timer.hpp>
 #include <sdbusplus/asio/object_server.hpp>
-#include <sdeventplus/event.hpp>
-#include <sdeventplus/utility/timer.hpp>
 
 #include <string>
 #include <unordered_map>
@@ -28,7 +27,7 @@ class TedSensors
   private:
     std::shared_ptr<sdbusplus::asio::connection>& conn;
     sdbusplus::asio::object_server objServer;
-    sdeventplus::utility::Timer<sdeventplus::ClockId::Monotonic> _timer;
+    boost::asio::steady_timer timer;
 
     std::shared_ptr<sdbusplus::asio::dbus_interface> addRemoveSensorIface;
 
@@ -45,6 +44,7 @@ class TedSensors
     void createSensor(const Json& sensorData);
     void createSensors();
 
+    void updateSensorValues();
     void read();
 };
 

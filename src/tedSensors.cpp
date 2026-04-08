@@ -2,12 +2,12 @@
 
 #include "tedSensor.hpp"
 
+#include <boost/asio/error.hpp>
 #include <phosphor-logging/lg2.hpp>
 #include <sdbusplus/asio/connection.hpp>
 #include <sdbusplus/asio/object_server.hpp>
-#include <sdeventplus/event.hpp>
-#include <sdeventplus/utility/timer.hpp>
 
+#include <chrono>
 #include <fstream>
 
 static constexpr auto sensorDbusPath = "/xyz/openbmc_project/sensors/";
@@ -32,8 +32,7 @@ std::map<std::string, ValueIface::Unit> unitMap = {
 TedSensors::TedSensors(std::shared_ptr<sdbusplus::asio::connection>& conn) :
     conn(conn),
     objServer(sdbusplus::asio::object_server(conn, /*skipManager=*/true)),
-    _timer(sdeventplus::Event::get_default(),
-           std::bind(&TedSensors::read, this))
+    timer(conn->get_io_context())
 {
     objServer.add_manager("/xyz/openbmc_project/sensors");
 
@@ -45,7 +44,27 @@ TedSensors::TedSensors(std::shared_ptr<sdbusplus::asio::connection>& conn) :
 
     createSensors();
 
-    _timer.restart(std::chrono::microseconds(1000000));
+    updateSensorValues();
+}
+
+void TedSensors::updateSensorValues()
+{
+    timer.expires_after(std::chrono::seconds(1));
+    timer.async_wait([this](const boost::system::error_code& ec) {
+        if (ec == boost::asio::error::operation_aborted)
+        {
+            // expected, we were canceled before the timer completed.
+            return;
+        }
+        if (ec)
+        {
+            lg2::error("Ted sensor polling timer failed: {ERROR}", "ERROR",
+                       ec.message());
+        }
+
+        read();
+        updateSensorValues();
+    });
 }
 
 Json TedSensors::parseConfigFile()
