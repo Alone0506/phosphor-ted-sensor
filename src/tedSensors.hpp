@@ -2,7 +2,6 @@
 
 #include "tedSensor.hpp"
 
-#include <boost/asio/steady_timer.hpp>
 #include <sdbusplus/asio/object_server.hpp>
 
 #include <string>
@@ -27,12 +26,11 @@ class TedSensors
   private:
     std::shared_ptr<sdbusplus::asio::connection>& conn;
     sdbusplus::asio::object_server objServer;
-    boost::asio::steady_timer timer;
 
     std::shared_ptr<sdbusplus::asio::dbus_interface> addRemoveSensorIface;
 
     /** @brief Map of the object TedSensor */
-    std::unordered_map<std::string, std::unique_ptr<TedSensor>> tedSensorsMap;
+    std::unordered_map<std::string, std::shared_ptr<TedSensor>> tedSensorsMap;
     /** @brief JSON configuration, key: sensor name, value: sensor config */
     std::unordered_map<std::string, Json> sensorConfigMap;
 
@@ -43,9 +41,6 @@ class TedSensors
     /** @brief Create list of sensors from JSON config */
     void createSensor(const Json& sensorData);
     void createSensors();
-
-    void updateSensorValues();
-    void read();
 };
 
 } // namespace phosphor::ted_sensor

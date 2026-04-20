@@ -11,6 +11,16 @@ project(
     meson_version: '>=1.1.1',
 )
 
+add_project_arguments(
+    '-DBOOST_SYSTEM_NO_DEPRECATED',
+    '-DBOOST_ERROR_CODE_HEADER_ONLY',
+    '-DBOOST_ALL_NO_LIB',
+    '-DBOOST_ASIO_DISABLE_THREADS',
+    '-DBOOST_ASIO_HAS_IO_URING',
+    '-DBOOST_ASIO_DISABLE_EPOLL',
+    language: 'cpp',
+)
+
 pkgdatadir = get_option('datadir') / meson.project_name()
 
 executable(
@@ -21,6 +31,7 @@ executable(
         'src/tedSensors.cpp',
     ],
     dependencies: [
+        dependency('liburing', include_type: 'system'),
         dependency('nlohmann_json', include_type: 'system'),
         dependency('phosphor-dbus-interfaces'),
         dependency('phosphor-logging'),

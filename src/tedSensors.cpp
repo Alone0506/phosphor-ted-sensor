@@ -31,8 +31,7 @@ std::map<std::string, ValueIface::Unit> unitMap = {
 
 TedSensors::TedSensors(std::shared_ptr<sdbusplus::asio::connection>& conn) :
     conn(conn),
-    objServer(sdbusplus::asio::object_server(conn, /*skipManager=*/true)),
-    timer(conn->get_io_context())
+    objServer(sdbusplus::asio::object_server(conn, /*skipManager=*/true))
 {
     objServer.add_manager("/xyz/openbmc_project/sensors");
 
@@ -43,28 +42,6 @@ TedSensors::TedSensors(std::shared_ptr<sdbusplus::asio::connection>& conn) :
     addRemoveSensorIface->initialize();
 
     createSensors();
-
-    updateSensorValues();
-}
-
-void TedSensors::updateSensorValues()
-{
-    timer.expires_after(std::chrono::seconds(1));
-    timer.async_wait([this](const boost::system::error_code& ec) {
-        if (ec == boost::asio::error::operation_aborted)
-        {
-            // expected, we were canceled before the timer completed.
-            return;
-        }
-        if (ec)
-        {
-            lg2::error("Ted sensor polling timer failed: {ERROR}", "ERROR",
-                       ec.message());
-        }
-
-        read();
-        updateSensorValues();
-    });
 }
 
 Json TedSensors::parseConfigFile()
@@ -133,7 +110,7 @@ void TedSensors::createSensor(const Json& sensorData)
                 }
                 auto objPath = sensorDbusPath + sensorType + "/" + name;
 
-                auto tedSensorPtr = std::make_unique<TedSensor>(
+                auto tedSensorPtr = std::make_shared<TedSensor>(
                     conn, objPath.c_str(), sensorData, name,
                     unitMap[sensorType]);
 
@@ -149,6 +126,7 @@ void TedSensors::createSensor(const Json& sensorData)
                 // During destruction, the sd_bus_emit_object_removed(path)
                 // signal will be sent to D-Bus.
                 tedSensorPtr->emit_object_added();
+                tedSensorPtr->setupRead();
 
                 tedSensorsMap.emplace(name, std::move(tedSensorPtr));
                 sensorConfigMap.emplace(name, sensorData);
@@ -225,14 +203,5 @@ void TedSensors::registerAddRemoveMethod()
                 return s;
             }
         });
-}
-
-void TedSensors::read()
-{
-    for (auto& [name, sensor] : tedSensorsMap)
-    {
-        sensor->read();
-        sensor->checkThreshold();
-    }
 }
 } // namespace phosphor::ted_sensor

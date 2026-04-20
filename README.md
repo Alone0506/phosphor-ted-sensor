@@ -105,6 +105,9 @@ The config file is a JSON array. Each element defines one sensor:
 # Check service status
 systemctl status phosphor-ted-sensor.service
 
+# Check the journal
+journalctl | grep -i phosphor-ted-sensor
+
 # Browse the D-Bus tree
 busctl tree xyz.openbmc_project.TedSensor
 

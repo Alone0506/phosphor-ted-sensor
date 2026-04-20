@@ -2,7 +2,8 @@
 
 #include <phosphor-logging/lg2.hpp>
 
-#include <fstream>
+#include <charconv>
+#include <iostream>
 
 std::filesystem::path simulationDirPath = "/tmp/sensor/simulation";
 
@@ -72,44 +73,6 @@ void TedSensor::initTedSensor(const Json& sensorConfig,
 
     /* setting available */
     AvailabilityInterface::available(true);
-}
-
-void TedSensor::read()
-{
-    double value = std::numeric_limits<double>::quiet_NaN();
-    std::filesystem::path simulationFilePath = simulationDirPath / name;
-    if (std::filesystem::exists(simulationFilePath))
-    {
-        std::ifstream simFile(simulationFilePath);
-        if (simFile.is_open())
-        {
-            simFile >> value;
-            simFile.close();
-        }
-        else
-        {
-            lg2::error("Failed to open simulation file {FILE}", "FILE",
-                       simulationFilePath.string());
-        }
-    }
-    if (!std::isnan(value))
-    {
-        value =
-            std::clamp(value, ValueIface::minValue(), ValueIface::maxValue());
-    }
-
-    // In phosphor-dbus-interfaces Sensor/Value/server.cpp#L47 (Value::value),
-    // when both _value and value are NaN, because NaN != NaN evaluates to true,
-    // value_interface.property_changed("Value") will be triggered and a
-    // property-changed signal will be emitted. However, the actual value has
-    // not changed, which results in an unnecessary signal being sent.
-    double _value = ValueIface::value();
-    if ((std::isnan(_value) && std::isnan(value)) || _value == value)
-    {
-        return;
-    }
-
-    ValueIface::value(value);
 }
 
 void TedSensor::checkThreshold()
@@ -183,6 +146,99 @@ void TedSensor::checkThreshold()
             CriticalIface::criticalLowAlarmDeasserted(value);
         }
     }
+}
+
+void TedSensor::setupRead()
+{
+    std::filesystem::path simulationFilePath = simulationDirPath / name;
+
+    if (!std::filesystem::exists(simulationFilePath))
+    {
+        handleResponse(boost::asio::error::not_found, 0);
+        return;
+    }
+
+    if (!inputDev.is_open())
+    {
+        inputDev.open(simulationFilePath.string(),
+                      boost::asio::random_access_file::read_only);
+    }
+
+    std::weak_ptr<TedSensor> weakRef = weak_from_this();
+    inputDev.async_read_some_at(
+        0, boost::asio::buffer(readBuf),
+        [weakRef](const boost::system::error_code& ec, std::size_t bytesRead) {
+            std::shared_ptr<TedSensor> self = weakRef.lock();
+            if (self)
+            {
+                self->handleResponse(ec, bytesRead);
+            }
+        });
+}
+
+void TedSensor::restartRead()
+{
+    std::weak_ptr<TedSensor> weakRef = weak_from_this();
+    timer.expires_after(std::chrono::seconds(1));
+    timer.async_wait([weakRef](const boost::system::error_code& ec) {
+        if (ec == boost::asio::error::operation_aborted)
+        {
+            return; // we're being canceled
+        }
+        std::shared_ptr<TedSensor> self = weakRef.lock();
+        if (!self)
+        {
+            return;
+        }
+        self->setupRead();
+    });
+}
+
+void TedSensor::handleResponse(const boost::system::error_code& err,
+                               std::size_t bytesRead)
+{
+    if (err == boost::system::errc::bad_file_descriptor)
+    {
+        lg2::error("Sensor '{NAME}' bad file descriptor", "NAME", name);
+        return; // we're being destroyed
+    }
+
+    if (err == boost::asio::error::misc_errors::not_found)
+    {
+        lg2::warning("Sensor '{NAME}' file not found, retrying...", "NAME",
+                     name);
+        restartRead();
+        return;
+    }
+
+    double value = std::numeric_limits<double>::quiet_NaN();
+
+    if (!err)
+    {
+        const char* bufEnd = readBuf.data() + bytesRead;
+        double nvalue = 0;
+        auto [ptr, ec] = std::from_chars(readBuf.data(), bufEnd, nvalue);
+        if (ec == std::errc())
+        {
+            value = std::clamp(nvalue, ValueIface::minValue(),
+                               ValueIface::maxValue());
+        }
+    }
+    else
+    {
+        lg2::error("Sensor '{NAME}' read error: {ERROR}", "NAME", name, "ERROR",
+                   err.message());
+    }
+
+    // Avoid unnecessary D-Bus property-changed signal when value hasn't changed
+    double oldValue = ValueIface::value();
+    if (!((std::isnan(oldValue) && std::isnan(value)) || oldValue == value))
+    {
+        ValueIface::value(value);
+        checkThreshold();
+    }
+
+    restartRead();
 }
 
 } // namespace phosphor::ted_sensor
